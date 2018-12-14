@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
 <title>Black-Friday-Analysis</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
@@ -11788,7 +11787,7 @@ div#notebook {
     <li><a href="#intro">Introduction</a></li>
     <li><a href="#1">Get Started With Data</a></li>
     <li><a href="#2">Tidying and Modifying Data</a></li>
-    <li><a href="#3">EDA</a>
+    <li><a href="#3">Exploratory Data Analysis (EDA)</a>
         <ul>
             <li><a href="#4">Gender</a></li>
             <li><a href="#5">Age</a></li>
@@ -11798,6 +11797,7 @@ div#notebook {
         </ul>
     </li>
     <li><a href="#hypothesis">Hypothesis Testing</a></li>
+    <li><a href="#ANOVA">Analysis of Variance</a></li>
     <li><a href="#9">Linear Regression</a></li>
     <li><a href="#10">Logistic Regression</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
@@ -11853,23 +11853,26 @@ In this tutorial, our <mark>goal</mark> is to advertise the right products to th
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Necessary libraries and imports to complete this tutorial</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Suppress FutureWarning</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
+<span class="c1"># Necessary libraries and imports to complete this tutorial</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">f</span>
 <span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
-<span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">model_selection</span>
-<span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">linear_model</span>
-<span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">preprocessing</span>
+<span class="kn">import</span> <span class="nn">statsmodels.api</span> <span class="k">as</span> <span class="nn">sm</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">stats</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">f</span>
+<span class="kn">from</span> <span class="nn">statsmodels.formula.api</span> <span class="k">import</span> <span class="n">ols</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">linear_model</span><span class="p">,</span> <span class="n">preprocessing</span><span class="p">,</span> <span class="n">model_selection</span>
 <span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="k">import</span> <span class="n">LabelEncoder</span>
 <span class="kn">from</span> <span class="nn">sklearn.cross_validation</span> <span class="k">import</span> <span class="n">train_test_split</span>
-<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">classification_report</span>
-<span class="kn">import</span> <span class="nn">statsmodels.formula.api</span> <span class="k">as</span> <span class="nn">smf</span>
-<span class="c1"># Suppress FutureWarning</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">classification_report</span><span class="p">,</span> <span class="n">accuracy_score</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">KFold</span>
+<span class="kn">from</span> <span class="nn">sklearn.utils.fixes</span> <span class="k">import</span> <span class="n">signature</span>
+<span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="k">import</span> <span class="n">Axes3D</span>
 </pre></div>
 
 </div>
@@ -11886,7 +11889,7 @@ In this tutorial, our <mark>goal</mark> is to advertise the right products to th
 
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>D:\Anaconda3\lib\site-packages\sklearn\cross_validation.py:41: DeprecationWarning: This module was deprecated in version 0.18 in favor of the model_selection module into which all the refactored classes and functions are moved. Also note that the interface of the new CV iterators are different from that of this module. This module will be removed in 0.20.
+<pre>C:\Users\truon\Anaconda3\lib\site-packages\sklearn\cross_validation.py:41: DeprecationWarning: This module was deprecated in version 0.18 in favor of the model_selection module into which all the refactored classes and functions are moved. Also note that the interface of the new CV iterators are different from that of this module. This module will be removed in 0.20.
   &#34;This module will be removed in 0.20.&#34;, DeprecationWarning)
 </pre>
 </div>
@@ -14314,7 +14317,7 @@ age are male or female.</p>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Find-the-target-audiance-for-each-product-category">Find the target audiance for each product category<a class="anchor-link" href="#Find-the-target-audiance-for-each-product-category">&#182;</a></h3>
+<h4 id="Find-the-target-audiance-for-each-product-category">Find the target audiance for each product category<a class="anchor-link" href="#Find-the-target-audiance-for-each-product-category">&#182;</a></h4>
 </div>
 </div>
 </div>
@@ -14433,7 +14436,643 @@ In the role of a retailer or advertising agency this information is invaluable. 
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Linear-Regression-"><section id="9">Linear Regression </section><a class="anchor-link" href="#Linear-Regression-">&#182;</a></h1><p>Occupation and Age</p>
+<p>Next, we are going to perform hypothesis testing on the mean purchase of male and female at significant level α = 0.05. <br>
+Base on the previous observation, <br>
+the <b>null hypothesis</b> is that mean purchase made by males and females are equal, and <br>
+our <b>alternative hypothesis</b> is mean purchase made by males and females are different.</p>
+<p>$
+H_0 : μ_{male} = μ_{female} \\
+H_1 : μ_{male} ≠ μ_{female} \\
+α = 0.05
+$</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[24]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">female_Purchase</span><span class="o">=</span> <span class="n">blackfriday</span><span class="p">[</span><span class="n">blackfriday</span><span class="p">[</span><span class="s1">&#39;Gender&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">][</span><span class="s1">&#39;Purchase&#39;</span><span class="p">]</span>
+<span class="n">male_Purchase</span> <span class="o">=</span> <span class="n">blackfriday</span><span class="p">[</span><span class="n">blackfriday</span><span class="p">[</span><span class="s1">&#39;Gender&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;Purchase&#39;</span><span class="p">]</span>
+<span class="c1"># Perform a standard independent 2 sample test that assumes equal population variances for male and female</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;2 sample test (assuming equal variance)&quot;</span><span class="p">)</span>
+<span class="n">f_val</span><span class="p">,</span> <span class="n">p_val</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">ttest_ind</span><span class="p">(</span><span class="n">male_Purchase</span><span class="p">,</span> <span class="n">female_Purchase</span><span class="p">)</span> 
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;F-statistic = &quot;</span><span class="p">,</span> <span class="n">f_val</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;P-value = &quot;</span><span class="p">,</span> <span class="n">p_val</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>2 sample test (assuming equal variance)
+F-statistic =  44.13462293864972
+P-value =  0.0
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Because the p-value = 0.0 &lt; α = 0.05, there is enough evidence to prove that mean purchase made by males is significantly different female.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[25]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># perform Welch’s t-test, which does not assume equal population variance </span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Welch’s t-test&quot;</span><span class="p">)</span>
+<span class="n">f_val</span><span class="p">,</span> <span class="n">p_val</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">ttest_ind</span><span class="p">(</span><span class="n">male_Purchase</span><span class="p">,</span> <span class="n">female_Purchase</span><span class="p">,</span> <span class="n">equal_var</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> 
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;F-statistic = &quot;</span><span class="p">,</span> <span class="n">f_val</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;P-value = &quot;</span><span class="p">,</span> <span class="n">p_val</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Welch’s t-test
+F-statistic =  45.67264701908008
+P-value =  0.0
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Because the means are significantly different, we should expect the variance of these two population also differ. <br>For different population variance, Welch's t-test will have a higher accuracy. <br>Result of Welch's t-test also indicates the population means are different since the p-value = 0.0 &lt; α = 0.05.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Analysis-of-Variance-"><section id="ANOVA">Analysis of Variance </section><a class="anchor-link" href="#Analysis-of-Variance-">&#182;</a></h1>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>For three or more population means, performing three or more hypothesis testing separately with <b>null hypothesis</b> $H_0: μ_1 = μ_2 = ... = μ_n$ would increase the probability of <b>Type I Error</b> (rejection of a true null hypothesis) so that it could be much higher than the level of significant α. <br><br>
+In stead of a 2 sample t-test,
+<b>Analysis of Variance (ANOVA)</b> is an inferential method used to test the equality of three or more population means.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now let's perform an ANOVA on the mean purchase of each age group. As the previous graphs show, different age groups have different purchase power. We are going to test if the mean purchases of different age group is statistically significantly different.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Using scipy.stats to perform 1-way ANOVA that tests the null hypothesis that two or more groups have the same population mean.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">age_17</span><span class="o">=</span> <span class="n">blackfriday</span><span class="p">[</span><span class="n">blackfriday</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;0-17&#39;</span><span class="p">][</span><span class="s1">&#39;Purchase&#39;</span><span class="p">]</span>
+<span class="n">age18_25</span><span class="o">=</span> <span class="n">blackfriday</span><span class="p">[</span><span class="n">blackfriday</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;18-25&#39;</span><span class="p">][</span><span class="s1">&#39;Purchase&#39;</span><span class="p">]</span>
+<span class="n">age26_35</span><span class="o">=</span> <span class="n">blackfriday</span><span class="p">[</span><span class="n">blackfriday</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;26-35&#39;</span><span class="p">][</span><span class="s1">&#39;Purchase&#39;</span><span class="p">]</span>
+<span class="n">age36_45</span><span class="o">=</span> <span class="n">blackfriday</span><span class="p">[</span><span class="n">blackfriday</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;36-45&#39;</span><span class="p">][</span><span class="s1">&#39;Purchase&#39;</span><span class="p">]</span>
+<span class="n">age46_50</span><span class="o">=</span> <span class="n">blackfriday</span><span class="p">[</span><span class="n">blackfriday</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;46-50&#39;</span><span class="p">][</span><span class="s1">&#39;Purchase&#39;</span><span class="p">]</span>
+<span class="n">age51_55</span><span class="o">=</span> <span class="n">blackfriday</span><span class="p">[</span><span class="n">blackfriday</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;51-55&#39;</span><span class="p">][</span><span class="s1">&#39;Purchase&#39;</span><span class="p">]</span>
+<span class="n">age55_</span><span class="o">=</span> <span class="n">blackfriday</span><span class="p">[</span><span class="n">blackfriday</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;55+&#39;</span><span class="p">][</span><span class="s1">&#39;Purchase&#39;</span><span class="p">]</span>
+
+<span class="n">f_val</span><span class="p">,</span> <span class="n">p_val</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">f_oneway</span><span class="p">(</span><span class="n">age_17</span><span class="p">,</span> <span class="n">age18_25</span><span class="p">,</span> <span class="n">age26_35</span><span class="p">,</span> <span class="n">age36_45</span><span class="p">,</span> <span class="n">age46_50</span><span class="p">,</span> <span class="n">age51_55</span><span class="p">,</span> <span class="n">age55_</span><span class="p">)</span> 
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;One-way ANOVA&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;F-statistic = &quot;</span><span class="p">,</span> <span class="n">f_val</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;P-value = &quot;</span><span class="p">,</span> <span class="n">p_val</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>One-way ANOVA
+F-statistic =  43.48718107271441
+P-value =  1.9552104879020313e-53
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Using Statsmodels to produce ANOVA table</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[27]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">ols</span><span class="p">(</span><span class="s1">&#39;Purchase ~ Age&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">blackfriday</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+<span class="n">anova_table</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">anova_lm</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">typ</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span> <span class="p">(</span><span class="n">anova_table</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>                sum_sq        df          F        PR(&gt;F)
+Age       6.470585e+09       6.0  43.487181  1.955210e-53
+Residual  1.333110e+13  537570.0        NaN           NaN
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Sure enough, since the p-value is significantly small, we have enough statistical evidence to prove that the mean purchase of different age group is significantly different.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Linear-Regression-"><section id="9">Linear Regression </section><a class="anchor-link" href="#Linear-Regression-">&#182;</a></h1><p>Fit a multiple linear regression model for Purchase using Occupation and Age</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Since most of the variables in the dataset are categorical, it is necessary to convert these qualitative (characteristic) values to quantitative (numerical) values.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Occupations in the dataset are already represented as numbers so we just need to assign each age group a numeric value. From the 
+Exploratory Data Analysis, we know the rank of the purchase power of each group, which is a numeric representation of each age group and can be used for the linear regression model.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[28]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">numeric</span> <span class="o">=</span> <span class="n">blackfriday</span><span class="p">[[</span><span class="s1">&#39;Age&#39;</span><span class="p">,</span> <span class="s1">&#39;Occupation&#39;</span><span class="p">,</span> <span class="s1">&#39;Purchase&#39;</span><span class="p">,</span> <span class="s1">&#39;Stay_In_Current_City_Years&#39;</span><span class="p">,</span> <span class="s1">&#39;Marital_Status&#39;</span><span class="p">]]</span>
+<span class="n">numeric</span> <span class="o">=</span> <span class="n">numeric</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[29]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Assign each age group a numeric value based on the rank of the amount of purchase</span>
+<span class="c1">#     1 is assigned to Age group 26-35</span>
+<span class="c1">#     2 is assigned to Age group 36-45</span>
+<span class="c1">#     3 is assigned to Age group 18-25</span>
+<span class="c1">#     4 is assigned to Age group 46-50</span>
+<span class="c1">#     5 is assigned to Age group 51-55</span>
+<span class="c1">#     6 is assigned to Age group 55+</span>
+<span class="c1">#     7 is assigned to Age group 0-17 </span>
+
+<span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">numeric</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;26-35&#39;</span><span class="p">:</span>
+        <span class="n">numeric</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;rank&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;36-45&#39;</span><span class="p">:</span>
+        <span class="n">numeric</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;rank&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">elif</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;18-25&#39;</span><span class="p">:</span>
+        <span class="n">numeric</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;rank&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="k">elif</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;46-50&#39;</span><span class="p">:</span>
+        <span class="n">numeric</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;rank&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="k">elif</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;51-55&#39;</span><span class="p">:</span>
+        <span class="n">numeric</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;rank&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="k">elif</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;55+&#39;</span><span class="p">:</span>
+        <span class="n">numeric</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;rank&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="k">elif</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;0-17&#39;</span><span class="p">:</span>
+        <span class="n">numeric</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;rank&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">numeric</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[29]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Age</th>
+      <th>Occupation</th>
+      <th>Purchase</th>
+      <th>Stay_In_Current_City_Years</th>
+      <th>Marital_Status</th>
+      <th>rank</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0-17</td>
+      <td>10</td>
+      <td>8370</td>
+      <td>2</td>
+      <td>0</td>
+      <td>7.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0-17</td>
+      <td>10</td>
+      <td>15200</td>
+      <td>2</td>
+      <td>0</td>
+      <td>7.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0-17</td>
+      <td>10</td>
+      <td>1422</td>
+      <td>2</td>
+      <td>0</td>
+      <td>7.0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0-17</td>
+      <td>10</td>
+      <td>1057</td>
+      <td>2</td>
+      <td>0</td>
+      <td>7.0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>55+</td>
+      <td>16</td>
+      <td>7969</td>
+      <td>4</td>
+      <td>0</td>
+      <td>6.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[30]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">numeric</span><span class="p">[[</span><span class="s1">&#39;Occupation&#39;</span><span class="p">,</span> <span class="s1">&#39;rank&#39;</span><span class="p">]]</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">numeric</span><span class="o">.</span><span class="n">Purchase</span>
+<span class="n">reg</span> <span class="o">=</span> <span class="n">linear_model</span><span class="o">.</span><span class="n">LinearRegression</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">X</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[30]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Occupation</th>
+      <th>rank</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>10</td>
+      <td>7.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>10</td>
+      <td>7.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>10</td>
+      <td>7.0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>10</td>
+      <td>7.0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>16</td>
+      <td>6.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[31]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">est1</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">OLS</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">est1</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:               Purchase   R-squared:                       0.617
+Model:                            OLS   Adj. R-squared:                  0.617
+Method:                 Least Squares   F-statistic:                 4.330e+05
+Date:                Thu, 13 Dec 2018   Prob (F-statistic):               0.00
+Time:                        22:59:00   Log-Likelihood:            -5.4864e+06
+No. Observations:              537577   AIC:                         1.097e+07
+Df Residuals:                  537575   BIC:                         1.097e+07
+Df Model:                           2                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P&gt;|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+Occupation   373.7333      1.145    326.332      0.000     371.489     375.978
+rank        1774.2126      4.045    438.614      0.000    1766.284    1782.141
+==============================================================================
+Omnibus:                     2780.401   Durbin-Watson:                   1.059
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):             2740.387
+Skew:                           0.160   Prob(JB):                         0.00
+Kurtosis:                       2.860   Cond. No.                         4.88
+==============================================================================
+
+Warnings:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The R-square indicates less than 0.0005 percent of the variance is explained by the linear regression model, which means the model is extremely inaccurate. The reason is very likely to be the lack of variables, especially numerical variables. Since the dataset naturally does not have sufficient numerical data, the only thing we can do to improve the model is to use more variables to construct the model.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Previous example demonstrated how to construct a multiple linear regression model with sklearn. We are going to use statsmodels to build another model with more variables to see if the accuracy could be improved.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[32]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">ols</span><span class="p">(</span><span class="n">formula</span><span class="o">=</span><span class="s1">&#39;Purchase ~ Occupation + rank + Stay_In_Current_City_Years + Marital_Status&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">numeric</span><span class="p">)</span>
+<span class="n">est2</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">est2</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:               Purchase   R-squared:                       0.000
+Model:                            OLS   Adj. R-squared:                  0.000
+Method:                 Least Squares   F-statistic:                     63.36
+Date:                Thu, 13 Dec 2018   Prob (F-statistic):           1.22e-53
+Time:                        22:59:00   Log-Likelihood:            -5.3393e+06
+No. Observations:              537577   AIC:                         1.068e+07
+Df Residuals:                  537572   BIC:                         1.068e+07
+Df Model:                           4                                         
+Covariance Type:            nonrobust                                         
+==============================================================================================
+                                 coef    std err          t      P&gt;|t|      [0.025      0.975]
+----------------------------------------------------------------------------------------------
+Intercept                   9159.8589     18.293    500.725      0.000    9124.005    9195.713
+Occupation                    15.9623      1.043     15.311      0.000      13.919      18.006
+rank                           4.9074      4.194      1.170      0.242      -3.314      13.128
+Stay_In_Current_City_Years    18.7491      5.271      3.557      0.000       8.418      29.080
+Marital_Status                -4.6586     13.869     -0.336      0.737     -31.841      22.523
+==============================================================================
+Omnibus:                    33488.402   Durbin-Watson:                   1.668
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):            37475.522
+Skew:                           0.624   Prob(JB):                         0.00
+Kurtosis:                       2.658   Cond. No.                         30.4
+==============================================================================
+
+Warnings:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Even though the model is still horrible, we do see the R-square is slightly improved. <br>Wrapping up in a sentence, building an accurate linear regression model requires sufficient numerical data.</p>
 
 </div>
 </div>
@@ -14450,18 +15089,149 @@ In the role of a retailer or advertising agency this information is invaluable. 
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Male vs Female</p>
+<p><b>Classify Gender Given Occupation</b></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>There is a challenge in our dataset which is imbalance between the number of male and female. The number of observations for female are only one third over male. Standard classifier algorithms like Logistic Regression has a bias towards classes which have number of instances. The tend to only predict the majority class. The features of minority are treated as noise and are often ignored. Thus there is a high probability of misclassification of the minority class as compared to the majority class.
+<br><br>
+There are several approaches to handle imbalance datasets: 
+<br></p>
+<p><ul>
+    <li>Random Resampling</li>
+    <li>Cluster-Based Over Sampling</li>
+    <li>Informed Over Sampling: Synthetic Minority Over-sampling Technique</li>
+    <li>Modified synthetic minority oversampling technique</li>
+</ul>
+<br>
+In our case, I would like to try out the Random Resampling Approach.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[24]:</div>
+<div class="prompt input_prompt">In&nbsp;[33]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">blackfriday</span><span class="p">[[</span><span class="s1">&#39;Occupation&#39;</span><span class="p">,</span> <span class="s1">&#39;Purchase&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">blackfriday</span><span class="p">[</span><span class="s1">&#39;Gender&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;M&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span> <span class="c1">#1 as Male, 0 as Female</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">purchase_by_user</span> <span class="o">=</span> <span class="n">blackfriday</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;User_ID&#39;</span><span class="p">,</span> <span class="s1">&#39;Gender&#39;</span><span class="p">,</span> <span class="s1">&#39;Occupation&#39;</span><span class="p">,</span> <span class="s1">&#39;Mean_age&#39;</span><span class="p">,</span> <span class="s1">&#39;Marital_Status&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="s1">&#39;Purchase&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">})</span>
+<span class="n">purchase_by_user</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">purchase_by_user</span><span class="o">.</span><span class="n">Gender</span> <span class="o">=</span> <span class="n">purchase_by_user</span><span class="o">.</span><span class="n">Gender</span><span class="o">.</span><span class="n">map</span><span class="p">({</span><span class="s1">&#39;F&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="n">purchase_by_user</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[33]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>User_ID</th>
+      <th>Gender</th>
+      <th>Occupation</th>
+      <th>Mean_age</th>
+      <th>Marital_Status</th>
+      <th>Purchase</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1000001</td>
+      <td>0</td>
+      <td>10</td>
+      <td>8.5</td>
+      <td>0</td>
+      <td>333481</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1000002</td>
+      <td>1</td>
+      <td>16</td>
+      <td>67.5</td>
+      <td>0</td>
+      <td>810353</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>1000003</td>
+      <td>1</td>
+      <td>15</td>
+      <td>30.5</td>
+      <td>0</td>
+      <td>341635</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>1000004</td>
+      <td>1</td>
+      <td>7</td>
+      <td>48.0</td>
+      <td>1</td>
+      <td>205987</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>1000005</td>
+      <td>1</td>
+      <td>20</td>
+      <td>30.5</td>
+      <td>1</td>
+      <td>821001</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[34]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">male</span> <span class="o">=</span> <span class="n">purchase_by_user</span><span class="p">[</span><span class="n">purchase_by_user</span><span class="o">.</span><span class="n">Gender</span><span class="o">==</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># Get all male </span>
+<span class="n">female</span> <span class="o">=</span> <span class="n">purchase_by_user</span><span class="p">[</span><span class="n">purchase_by_user</span><span class="o">.</span><span class="n">Gender</span><span class="o">==</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># Get all female</span>
+<span class="n">male</span> <span class="o">=</span> <span class="n">male</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">male</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span> <span class="c1"># only need half of the male population</span>
+<span class="n">new_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">male</span><span class="p">,</span> <span class="n">female</span><span class="p">,</span> <span class="n">female</span><span class="p">])</span> <span class="c1"># double the number of female population</span>
 </pre></div>
 
 </div>
@@ -14471,7 +15241,21 @@ In the role of a retailer or advertising agency this information is invaluable. 
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[25]:</div>
+<div class="prompt input_prompt">In&nbsp;[35]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">new_df</span><span class="p">[[</span><span class="s1">&#39;Occupation&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">new_df</span><span class="p">[</span><span class="s1">&#39;Gender&#39;</span><span class="p">]</span> <span class="c1">#1 as Male, 0 as Female</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[36]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -14495,7 +15279,7 @@ In the role of a retailer or advertising agency this information is invaluable. 
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>Accuracy of logistic regression classifier on test set: 0.75
+<pre>Accuracy of logistic regression classifier on test set: 0.64
 </pre>
 </div>
 </div>
@@ -14508,13 +15292,14 @@ In the role of a retailer or advertising agency this information is invaluable. 
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Compute-precision,-recall,-F-measure-and-support">Compute precision, recall, F-measure and support<a class="anchor-link" href="#Compute-precision,-recall,-F-measure-and-support">&#182;</a></h3>
+<h3 id="Compute-precision,-recall,-F-measure-and-support">Compute precision, recall, F-measure and support<a class="anchor-link" href="#Compute-precision,-recall,-F-measure-and-support">&#182;</a></h3><p><br> Precision-Recall is a useful measure of success of prediction when the classes are very imbalanced. In information retrieval, precision is a measure of result relevancy, while recall is a measure of how many truly relevant results are returned.</p>
+
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="prompt input_prompt">In&nbsp;[37]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">))</span>
@@ -14536,23 +15321,11 @@ In the role of a retailer or advertising agency this information is invaluable. 
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>             precision    recall  f1-score   support
 
-          0       0.00      0.00      0.00     39780
-          1       0.75      1.00      0.86    121494
+          0       0.64      0.93      0.76      1003
+          1       0.62      0.18      0.28       631
 
-avg / total       0.57      0.75      0.65    161274
+avg / total       0.64      0.64      0.58      1634
 
-</pre>
-</div>
-</div>
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stderr output_text">
-<pre>D:\Anaconda3\lib\site-packages\sklearn\metrics\classification.py:1135: UndefinedMetricWarning: Precision and F-score are ill-defined and being set to 0.0 in labels with no predicted samples.
-  &#39;precision&#39;, &#39;predicted&#39;, average, warn_for)
 </pre>
 </div>
 </div>
@@ -14565,18 +15338,184 @@ avg / total       0.57      0.75      0.65    161274
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Single vs Married</p>
+<p>Precision: 64% female and 62% male selected instances are relevant.
+<br> Recall: 93% female and only 18% male relevant instances are selected.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now, let's try Bagging Classifier to see if the result is better than Logistic Regression</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[27]:</div>
+<div class="prompt input_prompt">In&nbsp;[38]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">blackfriday</span><span class="p">[[</span><span class="s1">&#39;Mean_age&#39;</span><span class="p">,</span> <span class="s1">&#39;Purchase&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">blackfriday</span><span class="p">[</span><span class="s1">&#39;Marital_Status&#39;</span><span class="p">]</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="k">import</span> <span class="n">BaggingClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.tree</span> <span class="k">import</span> <span class="n">DecisionTreeClassifier</span>
+
+<span class="n">bag_clf</span> <span class="o">=</span> <span class="n">BaggingClassifier</span><span class="p">(</span><span class="n">DecisionTreeClassifier</span><span class="p">(),</span> <span class="n">n_estimators</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">max_samples</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">bootstrap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">oob_score</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">bag_clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="n">y_pred</span> <span class="o">=</span> <span class="n">bag_clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+<span class="n">bag_clf</span><span class="o">.</span><span class="n">oob_score_</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[38]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>0.658267716535433</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>According to this oob evaluation, this BaggingClassifier is likely to achieve about 65.9% accuracy on the test set. Let's verify this:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[39]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[39]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>0.6542227662178702</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We get 65.4% accuracy on the test set. It is close enough.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Compute-precision,-recall,-F-measure-and-support">Compute precision, recall, F-measure and support<a class="anchor-link" href="#Compute-precision,-recall,-F-measure-and-support">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[40]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>             precision    recall  f1-score   support
+
+          0       0.66      0.89      0.76      1003
+          1       0.61      0.28      0.39       631
+
+avg / total       0.64      0.65      0.61      1634
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>As we can see, the result is a little bit better than Logistic Regression. But there is a tradeoff when we use BaggingClassifier. The precision in female increases but the recall decreases. With male, the precision decreases while the recall increases. 
+<br>
+<br>Precision: 66% female and 61% male selected instances are relevant. 
+<br>Recall: 89% female and only 28% male relevant instances are selected.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><b>Classify Marrital Status Given Mean Age</b></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[41]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">purchase_by_user</span><span class="p">[[</span><span class="s1">&#39;Mean_age&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">purchase_by_user</span><span class="p">[</span><span class="s1">&#39;Marital_Status&#39;</span><span class="p">]</span>
 </pre></div>
 
 </div>
@@ -14586,7 +15525,7 @@ avg / total       0.57      0.75      0.65    161274
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[28]:</div>
+<div class="prompt input_prompt">In&nbsp;[42]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -14629,7 +15568,7 @@ avg / total       0.57      0.75      0.65    161274
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[29]:</div>
+<div class="prompt input_prompt">In&nbsp;[43]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">))</span>
@@ -14651,10 +15590,151 @@ avg / total       0.57      0.75      0.65    161274
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>             precision    recall  f1-score   support
 
-          0       0.66      0.91      0.76     95191
-          1       0.71      0.33      0.45     66083
+          0       0.67      0.87      0.76      1032
+          1       0.68      0.39      0.50       736
 
-avg / total       0.68      0.67      0.64    161274
+avg / total       0.67      0.67      0.65      1768
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now, let's try Bagging Classifier to see if the result is better than Logistic Regression</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[44]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">bag_clf</span> <span class="o">=</span> <span class="n">BaggingClassifier</span><span class="p">(</span><span class="n">DecisionTreeClassifier</span><span class="p">(),</span> <span class="n">n_estimators</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">max_samples</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">bootstrap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">oob_score</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">bag_clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="n">y_pred</span> <span class="o">=</span> <span class="n">bag_clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+<span class="n">bag_clf</span><span class="o">.</span><span class="n">oob_score_</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[44]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>0.670870725200097</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>According to this oob evaluation, this BaggingClassifier is likely to achieve about 67.1% accuracy on the test set. Let's verify this:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[45]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[45]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>0.6702488687782805</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We get 67.0% accuracy on the test set. It is close enough.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Compute-precision,-recall,-F-measure-and-support">Compute precision, recall, F-measure and support<a class="anchor-link" href="#Compute-precision,-recall,-F-measure-and-support">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[46]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>             precision    recall  f1-score   support
+
+          0       0.67      0.87      0.76      1032
+          1       0.68      0.39      0.50       736
+
+avg / total       0.67      0.67      0.65      1768
 
 </pre>
 </div>
